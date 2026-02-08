@@ -1,4 +1,4 @@
-const Article = require('./model/article.m');
+const Article = require('../models/article.m');
 const joi = require('joi');
 
 const createArticle = async (req, res, next) => {
