@@ -1,4 +1,4 @@
-const Article = require('../model/article.m');
+const Article = require('./model/article.m');
 const joi = require('joi');
 
 const createArticle = async (req, res, next) => {
@@ -52,6 +52,17 @@ const getArticleById = async (req, res, next) => {
 const updateArticle = async (req, res, next) => {
     try {
         const { title, content, author } = req.body;
+        const schema = joi.object({
+            title: joi.string().min(5),
+            content: joi.string().min(20),
+            author: joi.string()
+        });
+
+        const { error } = schema.validate(req.body);
+        if (error) {
+            return res.status(400).json({ message: error.details[0].message });
+        }
+
         const article = await Article.findByIdAndUpdate(
             req.params.id,
             { title, content, author },
@@ -80,10 +91,22 @@ const deleteArticle = async (req, res, next) => {
     }
 };
 
+const searchArticles = async (req, res, next) => {
+    const { q } = req.query;
+    try {
+        const articles = await Article.find({ $text: { $search: q } });
+        res.status(200).json(articles);
+    } catch (error) {
+        res.status(500).json({ message: 'Error searching articles', error: error.message });
+        next(error);
+    }
+};
+
 module.exports = {
     createArticle,
     getArticles,
     getArticleById,
     updateArticle,
-    deleteArticle
+    deleteArticle,
+    searchArticles
 };
