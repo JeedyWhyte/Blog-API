@@ -1,20 +1,11 @@
-const Article = require('../models/article.m');
+const Article = require('../model/article.m');
 const joi = require('joi');
 
 const createArticle = async (req, res, next) => {
-    const schema = joi.object({
-        title: joi.string().min(5).required(),
-        content: joi.string().min(20).required(),
-        author: joi.string().default('Anonymous')
-    });
-
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({ message: error.details[0].message });
-    }
-
     try {
-        const { title, content, author } = req.body;
+        const { title, content } = req.body;
+        const author = req.user._id;
+
         const article = new Article({ title, content, author });
         await article.save();
         res.status(201).json({ message: 'Article created successfully', article });
@@ -28,7 +19,7 @@ const getArticles = async (req, res, next) => {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
     try {
-        const articles = await Article.find().skip(skip).limit(parseInt(limit)).sort({ createdAt: -1 });
+        const articles = await Article.find().skip(skip).limit(parseInt(limit)).sort({ createdAt: -1 }).populate('author', 'name username');
         res.status(200).json(articles);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching articles', error: error.message });
@@ -38,7 +29,7 @@ const getArticles = async (req, res, next) => {
 
 const getArticleById = async (req, res, next) => {
     try {
-        const article = await Article.findById(req.params.id);
+        const article = await Article.findById(req.params.id).populate('author', 'name username');
         if (!article) {
             return res.status(404).json({ message: 'Article not found' });
         }
@@ -63,14 +54,20 @@ const updateArticle = async (req, res, next) => {
             return res.status(400).json({ message: error.details[0].message });
         }
 
-        const article = await Article.findByIdAndUpdate(
-            req.params.id,
-            { title, content, author },
-            { new: true }
-        );
+        const article = await Article.findById(req.params.id);
+
         if (!article) {
             return res.status(404).json({ message: 'Article not found' });
         }
+
+        if (article.author.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'You are not authorized to update this article' });
+        }
+
+        article.title = title || article.title;
+        article.content = content || article.content;
+        await article.save();
+
         res.status(200).json({ message: 'Article updated successfully', article });
     } catch (error) {
         res.status(500).json({ message: 'Error updating article', error: error.message });
@@ -80,10 +77,17 @@ const updateArticle = async (req, res, next) => {
 
 const deleteArticle = async (req, res, next) => {
     try {
-        const article = await Article.findByIdAndDelete(req.params.id);
+        const article = await Article.findById(req.params.id);
+
         if (!article) {
             return res.status(404).json({ message: 'Article not found' });
         }
+
+        if (article.author.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'You are not authorized to delete this article' });
+        }
+
+        await article.deleteOne();
         res.status(200).json({ message: 'Article deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting article', error: error.message });

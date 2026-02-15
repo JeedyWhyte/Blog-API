@@ -17,6 +17,7 @@ app.use(logger);
 
 
 app.use('/api', require('./routes/article.r'));
+app.use('/api/users', require('./routes/user.r'));
 
 
 app.use(errorHandler)
