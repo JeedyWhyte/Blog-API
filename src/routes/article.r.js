@@ -4,16 +4,18 @@ const { createArticle, getArticles, getArticleById, updateArticle, deleteArticle
 const { validateArticle, validateArticleUpdate } = require('../middlewares/validation.m');
 const requireAuth = require('../middlewares/requireauth');
 
-router.post('/articles', validateArticle, requireAuth, createArticle)
+router.use(requireAuth);
 
-router.get('/articles', requireAuth, getArticles)
+router.post('/articles', validateArticle, createArticle)
 
-router.get('/articles/search', requireAuth, searchArticles)
+router.get('/articles', getArticles)
 
-router.get('/articles/:id', requireAuth, getArticleById)
+router.get('/articles/search', searchArticles)
 
-router.put('/articles/:id', validateArticleUpdate, requireAuth, updateArticle)
+router.get('/articles/:id', getArticleById)
 
-router.delete('/articles/:id', requireAuth, deleteArticle)
+router.put('/articles/:id', validateArticleUpdate, updateArticle)
+
+router.delete('/articles/:id', deleteArticle)
 
 module.exports = router;
