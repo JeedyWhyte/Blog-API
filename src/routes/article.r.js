@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { createArticle, getArticles, getArticleById, updateArticle, deleteArticle, searchArticles } = require('../controllers/article.c');
-const { validateArticle, validateArticleUpdate } = require('../middlewares/validation.m');
+const { validateArticle, validateArticleUpdate } = require('../middlewares/validate.p.m');
 const requireAuth = require('../middlewares/requireauth');
+const upload = require('../middlewares/uploads');
 
 router.use(requireAuth);
 
-router.post('/articles', validateArticle, createArticle)
+router.post('/articles', validateArticle, upload.array('images', 5), createArticle)
 
 router.get('/articles', getArticles)
 

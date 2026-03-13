@@ -5,8 +5,9 @@ const createArticle = async (req, res, next) => {
     try {
         const { title, content } = req.body;
         const author = req.user._id;
+        const images = req.files && Array.isArray(req.files) ? req.files.map(f => f.path) : [];
 
-        const article = new Article({ title, content, author });
+        const article = new Article({ title, content, author, images });
         await article.save();
         res.status(201).json({ message: 'Article created successfully', article });
     } catch (error) {
